@@ -2,7 +2,6 @@ package org.example.videoapi21.Controller;
 
 import org.example.videoapi21.Exception.InvalidVideoFormatException;
 import org.example.videoapi21.Exception.SendVideoTaskException;
-import org.example.videoapi21.Kafka.VideoProducer;
 import org.example.videoapi21.Response.CustomErrorResponse;
 import org.example.videoapi21.Service.VideoService;
 import org.springframework.core.io.FileSystemResource;
@@ -15,8 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -28,15 +25,15 @@ public class VideoController {
     private final VideoService videoService;
 
 
-    public VideoController(VideoProducer videoProducer, VideoService videoService) throws IOException {
+    public VideoController(VideoService videoService) throws IOException {
         Files.createDirectories(videoStorage);
         this.videoService = videoService;
     }
 
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadVideo(@RequestParam("file") MultipartFile file) throws IOException, SendVideoTaskException {
-        videoService.HandleFlieUpload(file);
+    public ResponseEntity<String> uploadVideo(@RequestParam("file") MultipartFile file) throws IOException, SendVideoTaskException, InvalidVideoFormatException {
+        videoService.handleFileUpload(file);
         return ResponseEntity.ok().body("Video uploaded");
     }
     @ExceptionHandler(value = SendVideoTaskException.class)

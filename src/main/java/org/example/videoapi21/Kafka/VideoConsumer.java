@@ -5,7 +5,6 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,7 +40,7 @@ public class VideoConsumer {
             }
 
             System.out.println("▶️ Mp4 to HLS conversion started  : " + taskId);
-            videoService.Mp4ToHLS(file.getAbsolutePath());
+            videoService.mp4ToHLS(file.getAbsolutePath());
             System.out.println("✅ Successfully converted to HLS: " + taskId);
 
         } catch (Exception e) {

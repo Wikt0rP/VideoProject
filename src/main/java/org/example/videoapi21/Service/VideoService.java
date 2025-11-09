@@ -18,7 +18,6 @@ import java.util.UUID;
 @Service
 public class VideoService {
     private static final String VIDEO_DIR = "video";
-    private static final String VIDEO_HLS = "hls_output/videos";
     private final Path videoStorage = Paths.get(VIDEO_DIR);
 
     private final VideoProducer videoProducer;
@@ -30,11 +29,8 @@ public class VideoService {
 
 
 
-    public void HandleFlieUpload(MultipartFile file) throws IOException, SendVideoTaskException, InvalidVideoFormatException {
-        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-        if(!"mp4".equalsIgnoreCase(extension)){
-            throw new InvalidVideoFormatException("Uploaded video should be in accepted format ex. MP4");
-        }
+    public void handleFileUpload(MultipartFile file) throws IOException, SendVideoTaskException, InvalidVideoFormatException {
+        validateFileFormat(file);
 
         String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
         Path filePath = videoStorage.resolve(filename);
@@ -45,7 +41,14 @@ public class VideoService {
 
     }
 
-    public void Mp4ToHLS(String inputPath) {
+    private static void validateFileFormat(MultipartFile file) throws InvalidVideoFormatException {
+        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
+        if(!"mp4".equalsIgnoreCase(extension)){
+            throw new InvalidVideoFormatException("Uploaded video should be in accepted format ex. MP4");
+        }
+    }
+
+    public void mp4ToHLS(String inputPath) {
         File source = new File(inputPath);
         if (!source.exists()) {
             System.err.println("Source file does not exist: " + inputPath);
