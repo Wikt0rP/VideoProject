@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HLS Player</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+            padding: 20px;
+            background: #fafafa;
+            color: #111;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .layout {
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 240px;
+            background: #eee;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .sidebar h3 {
+            margin-top: 0;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar li {
+            margin-bottom: 8px;
+            cursor: pointer;
+            color: #0a74ff;
+        }
+        .sidebar li:hover {
+            text-decoration: underline;
+        }
+        .main {
+            flex: 1;
+        }
+        video {
+            width: 100%;
+            max-height: 70vh;
+            background: #000;
+        }
+        .controls {
+            margin: 12px 0;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #0a74ff;
+            background: #0a74ff;
+            color: #fff;
+            cursor: pointer;
+        }
+        pre {
+            background: #111;
+            color: #0cffb3;
+            padding: 10px;
+            border-radius: 6px;
+            max-height: 220px;
+            overflow: auto;
+        }
+        .note {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>HLS Player (hls.js)</h1>
+    <div class="layout">
+        <div class="sidebar">
+            <h3>Lista filmów</h3>
+            <ul id="videoList">
+                <li data-file="1fb5e55d-3826-44cf-aeff-986937795865_Desktop 2025.11.08 - 21.32.45.01">Film 1</li>
+                <li data-file="348364c8-3a90-4249-9af0-39d2edfd0283_Desktop 2025.11.08 - 21.32.45.01">Film 2</li>
+            </ul>
+        </div>
+        <div class="main">
+            <div class="controls">
+                <input id="filename" type="text" placeholder="Podaj nazwę folderu z filmem" />
+                <button id="loadBtn">Load & Play</button>
+                <button id="reloadBtn">Reload</button>
+            </div>
+
+            <video id="video" controls></video>
+
+            <div class="note">
+                Jeśli autoplay nie startuje, kliknij przycisk play na odtwarzaczu — przeglądarki często blokują automatyczne odtwarzanie.
+            </div>
+
+            <h3>Console / Log</h3>
+            <pre id="log">Log:</pre>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+    (function() {
+        const video = document.getElementById('video');
+        const loadBtn = document.getElementById('loadBtn');
+        const reloadBtn = document.getElementById('reloadBtn');
+        const filenameInput = document.getElementById('filename');
+        const logEl = document.getElementById('log');
+        const videoList = document.getElementById('videoList');
+
+        function log(...args) {
+            console.log(...args);
+            logEl.textContent += '\n' + args.join(' ');
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        let hls = null;
+        function destroyHls() {
+            if(hls) { try{ hls.destroy(); } catch(e){ console.warn(e); } hls=null; }
+        }
+
+        async function loadAndPlay(folderName) {
+            destroyHls();
+            if(!folderName) { log('Podaj nazwę folderu z filmem'); return; }
+
+            const encoded = encodeURIComponent(folderName);
+            const url = `http://localhost:8080/api/videos/${encoded}/playlist.m3u8`;
+
+            log('Ładuję manifest:', url);
+
+            if(video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                try { await video.play(); log('Odtwarzanie uruchomione natywnie.'); }
+                catch(e) { log('Autoplay zablokowany — czekam na akcję użytkownika.', e.message); }
+                return;
+            }
+
+            if(Hls.isSupported()) {
+                hls = new Hls({ enableWorker:true, debug:false });
+                hls.on(Hls.Events.ERROR, (event,data) => {
+                    log('hls.js ERROR', event, data);
+                    if(data && data.type===Hls.ErrorTypes.NETWORK_ERROR) {
+                        log('Network error — retrying load...');
+                        setTimeout(()=>hls.loadSource(url),500);
+                    }
+                });
+                hls.on(Hls.Events.MANIFEST_PARSED, (_,data)=>{
+                    log('MANIFEST_PARSED — levels:', data.levels ? data.levels.length : 'unknown');
+                    video.play().then(()=>log('Autoplay OK')).catch(err=>log('Autoplay blocked:', err.message));
+                });
+                hls.attachMedia(video);
+                hls.loadSource(url);
+            } else {
+                log('Twoja przeglądarka nie wspiera HLS i hls.js nie działa.');
+            }
+        }
+
+        loadBtn.addEventListener('click', ()=>loadAndPlay(filenameInput.value.trim()));
+        reloadBtn.addEventListener('click', ()=>loadAndPlay(filenameInput.value.trim()));
+
+        videoList.addEventListener('click', (e) => {
+            if (e.target && e.target.dataset.file) {
+                const file = e.target.dataset.file;
+                filenameInput.value = file;
+                loadAndPlay(file);
+            }
+        });
+    })();
+</script>
+</body>
+</html>
