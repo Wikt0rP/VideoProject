@@ -36,23 +36,7 @@ public class VideoController {
         videoService.handleFileUpload(file);
         return ResponseEntity.ok().body("Video uploaded");
     }
-    @ExceptionHandler(value = SendVideoTaskException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public CustomErrorResponse handleSendVideoTaskException(SendVideoTaskException ex){
-        return new CustomErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
-    }
 
-    @ExceptionHandler(value = InvalidVideoFormatException.class)
-    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    public CustomErrorResponse handleInvalidVideoFormatException(InvalidVideoFormatException ex){
-        return new CustomErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.value(), ex.getMessage());
-    }
-
-    @ExceptionHandler(value = IOException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public CustomErrorResponse handleIOException(IOException ex){
-        return new CustomErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
-    }
 
 
     @GetMapping("/{folder}/{filename:.+}")

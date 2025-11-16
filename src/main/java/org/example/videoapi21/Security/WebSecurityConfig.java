@@ -37,13 +37,14 @@ public class WebSecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/videos/*",
-                                "/api/thumbnails/*",
-                                "/user/auth/*"
+                                "/api/videos/**",
+                                "/api/thumbnails/**",
+                                "/user/auth/register",
+                                "/user/auth/login"
                         ).permitAll()
                         .requestMatchers("/user-dashboard").authenticated()
                         .anyRequest().authenticated())
-                .exceptionHandling(e -> e.authenticationEntryPoint(authenticationJwtTokenFilter()));
+                .exceptionHandling(e -> e.authenticationEntryPoint(authenticationJwtToken()));
 
 
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
@@ -52,13 +53,7 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public AuthEntryPointJwt authenticationJwtTokenFilter() {
+    public AuthEntryPointJwt authenticationJwtToken() {
         return new AuthEntryPointJwt();
     }
-
-    @Bean
-    public UserDetailsService userDetailsService(){
-        return userDetailsService;
-    }
-
 }

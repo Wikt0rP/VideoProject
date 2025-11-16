@@ -29,17 +29,4 @@ public class ThumbnailController {
         thumbnailService.handleThumbnailUpload(file);
         return ResponseEntity.ok().body("Thumbnail uploaded");
     }
-    @ExceptionHandler(value = InvalidImageFormatException.class)
-    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    public CustomErrorResponse handleInvalidImageFormatException(InvalidImageFormatException ex){
-        return new CustomErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.value(), ex.getMessage());
-    }
-
-    @ExceptionHandler(value = CouldNotSaveFileException.class)
-    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    public CustomErrorResponse handleCouldNotSaveFileException(CouldNotSaveFileException ex){
-        return new CustomErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
-    }
-
-
 }
