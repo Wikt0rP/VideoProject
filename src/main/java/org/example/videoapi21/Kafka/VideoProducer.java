@@ -16,9 +16,9 @@ public class VideoProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendVideoTask(String filePath) throws SendVideoTaskException {
+    public void sendVideoTask(String filePath, Long videoId) throws SendVideoTaskException {
         int taskId = counter.incrementAndGet();
-        String message = taskId + "|" + filePath;
+        String message = taskId + "|" + filePath + "|" + videoId;
 
         try {
             SendResult<String, String> result = kafkaTemplate.send("video-tasks", message).get();

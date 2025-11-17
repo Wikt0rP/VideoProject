@@ -1,9 +1,13 @@
 package org.example.videoapi21.Service;
 
 import org.apache.commons.io.FilenameUtils;
+import org.example.videoapi21.Entity.Video;
 import org.example.videoapi21.Exception.InvalidVideoFormatException;
 import org.example.videoapi21.Exception.SendVideoTaskException;
+import org.example.videoapi21.Exception.UnableToSetResourcePath;
 import org.example.videoapi21.Kafka.VideoProducer;
+import org.example.videoapi21.Repository.VideoRepository;
+import org.example.videoapi21.Request.CreateVidoeEntityRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,21 +27,26 @@ public class VideoService {
 
     private final VideoProducer videoProducer;
     private final String ffmpegPath = "C:\\ffmpeg-2025-11-06-git-222127418b-full_build\\bin\\ffmpeg.exe";
+    private final VideoRepository videoRepository;
 
-    public VideoService(VideoProducer videoProducer){
+    public VideoService(VideoProducer videoProducer, VideoRepository videoRepository) {
         this.videoProducer = videoProducer;
+        this.videoRepository = videoRepository;
     }
 
 
 
-    public void handleFileUpload(MultipartFile file) throws IOException, SendVideoTaskException, InvalidVideoFormatException {
+    public void handleFileUpload(MultipartFile file, CreateVidoeEntityRequest createVidoeEntityRequest) throws IOException, SendVideoTaskException, InvalidVideoFormatException {
         validateFileFormat(file);
 
         String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
         Path filePath = videoStorage.resolve(filename);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
         System.out.println("File saved: " + filePath.toAbsolutePath());
-        videoProducer.sendVideoTask(filePath.toAbsolutePath().toString());
+
+        Video video = new Video(createVidoeEntityRequest.title(), createVidoeEntityRequest.description(), "", "");
+        videoRepository.save(video);
+        videoProducer.sendVideoTask(filePath.toAbsolutePath().toString(), video.getId());
         System.out.println("Task queued for conversion: " + filePath.getFileName());
 
     }
@@ -48,11 +58,11 @@ public class VideoService {
         }
     }
 
-    public void mp4ToHLS(String inputPath) {
+    public String mp4ToHLS(String inputPath) {
         File source = new File(inputPath);
         if (!source.exists()) {
             System.err.println("Source file does not exist: " + inputPath);
-            return;
+            return "";
         }
 
         String filename = source.getName();
@@ -100,14 +110,26 @@ public class VideoService {
             Process process = pb.start();
             int exitCode = process.waitFor();
 
-            if (exitCode == 0) {
-                System.out.println("Success!");
-                System.out.println("Output: " + outputDir.getAbsolutePath());
+            if (exitCode == 0){
+                return playlistPath;
             } else {
                 System.err.println("ffmpeg finished with error code: " + exitCode);
+                return "";
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+            return "";
+        }
+    }
+
+    public void setVideoPath(Long videoID, String vidoPath) throws UnableToSetResourcePath{
+        Optional<Video> video = videoRepository.findVideoById(videoID);
+        if(video.isPresent()){
+            Video videoEntity = video.get();
+            videoEntity.setVideoPath(vidoPath);
+            videoRepository.save(videoEntity);
+        }else{
+            throw new UnableToSetResourcePath("Video could not be found by id, path to resources not set");
         }
     }
 }
