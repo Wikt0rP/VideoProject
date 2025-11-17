@@ -1,5 +1,6 @@
 package org.example.videoapi21.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,7 @@ public class AppUser {
     @JsonManagedReference
     private Set<Role> roles = new HashSet<>();
 
+    @JsonIgnore
     private String password;
 
     public AppUser(String username, String password, Role role) {

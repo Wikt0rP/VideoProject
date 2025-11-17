@@ -20,30 +20,62 @@ import java.io.IOException;
 @Component
 public class AuthTokenFilter extends OncePerRequestFilter {
 
-    @Autowired
     private JwtUtils jwtUtils;
-
-    @Autowired
     private UserDetailsServiceImpl userDetailsService;
+
+    public AuthTokenFilter(UserDetailsServiceImpl userDetailsService, JwtUtils jwtUtils) {
+        this.userDetailsService = userDetailsService;
+        this.jwtUtils = jwtUtils;
+    }
 
     private static Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
 
 
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException, UsernameNotFoundException {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException, UsernameNotFoundException {
+
+        // 🔥 LOGI DIAGNOSTYCZNE
+        logger.info("=== AuthTokenFilter START ===");
+        logger.info("Request: {} {}", request.getMethod(), request.getRequestURI());
+        logger.info("Content-Type: {}", request.getContentType());
+        logger.info("Authorization Header: {}", request.getHeader("Authorization"));
+
         try {
             String jwt = JwtUtils.getJwtFromRequest(request);
-            if(jwt != null && jwtUtils.validateToken(jwt)){
+            logger.info("Extracted JWT: {}", jwt);
+
+            if (jwt != null && jwtUtils.validateToken(jwt)) {
+                logger.info("JWT is valid");
+
                 String username = jwtUtils.extractUsername(jwt);
+                logger.info("Extracted username: {}", username);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                logger.info("Authentication set for user {}", username);
+            } else {
+                logger.warn("JWT is NULL or INVALID");
             }
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e.getMessage());
+            logger.error("Cannot set user authentication: {}", e.getMessage(), e);
         }
+
+        logger.info("=== AuthTokenFilter END ===\n");
+
         filterChain.doFilter(request, response);
     }
 }
+

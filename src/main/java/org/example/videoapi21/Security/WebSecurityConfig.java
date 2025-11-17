@@ -2,6 +2,7 @@ package org.example.videoapi21.Security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -37,12 +38,16 @@ public class WebSecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/videos/**",
-                                "/api/thumbnails/**",
                                 "/user/auth/register",
                                 "/user/auth/login"
                         ).permitAll()
-                        .requestMatchers("/user-dashboard").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/videos/{folder}/{filename:.+}").permitAll()
+                        .requestMatchers(
+                                "/user-dashboard",
+                                "/api/videos/upload",
+                                "/api/videos/test"
+                        )
+                        .authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationJwtToken()));
 

@@ -31,10 +31,11 @@ public class VideoConsumer {
 
     private void processMessage(String message) throws UnableToSetResourcePath {
         try {
-            String[] parts = message.split("\\|", 2);
+            String[] parts = message.split("\\|");
             int taskId = Integer.parseInt(parts[0]);
             File file = Paths.get(parts[1]).toFile();
             Long videoId = Long.parseLong(parts[2]);
+
 
             if (!file.exists()) {
                 System.err.println("File does not Exist: " + file.getAbsolutePath());

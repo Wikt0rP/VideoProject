@@ -16,6 +16,7 @@ public class Video {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private UUID uuid;
     private String title;
     private String description;
@@ -26,10 +27,14 @@ public class Video {
     private String videoPath;
     private String thumbnailPath;
 
-    public Video(String title, String description, String videoPath, String thumbnailPath) {
+    public Video(String title, String description, AppUser author, String videoPath, String thumbnailPath) {
         this.title = title;
         this.description = description;
+        this.author = author;
         this.videoPath = videoPath;
         this.thumbnailPath = thumbnailPath;
+
+        this.uuid = UUID.randomUUID();
+
     }
 }
