@@ -24,9 +24,9 @@ public class ThumbnailController {
     }
 
 
-    @PostMapping("/upload")
-    public ResponseEntity<String> uploadThumbnail(@RequestParam("file") MultipartFile file){
-        thumbnailService.handleThumbnailUpload(file);
-        return ResponseEntity.ok().body("Thumbnail uploaded");
-    }
+//    @PostMapping("/upload")
+//    public ResponseEntity<String> uploadThumbnail(@RequestParam("file") MultipartFile file){
+//        thumbnailService.handleThumbnailUpload(file);
+//        return ResponseEntity.ok().body("Thumbnail uploaded");
+//    }
 }

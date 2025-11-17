@@ -3,7 +3,6 @@ package org.example.videoapi21.Controller;
 import org.example.videoapi21.Exception.InvalidVideoFormatException;
 import org.example.videoapi21.Exception.SendVideoTaskException;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
-import org.example.videoapi21.Response.CustomErrorResponse;
 import org.example.videoapi21.Service.VideoService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -33,8 +32,9 @@ public class VideoController {
 
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadVideo(@RequestParam("file") MultipartFile file, @RequestBody CreateVidoeEntityRequest request) throws IOException, SendVideoTaskException, InvalidVideoFormatException {
-        videoService.handleFileUpload(file, request);
+    public ResponseEntity<String> uploadVideo(@RequestParam("video") MultipartFile videoFile, @RequestParam("thumbnail") MultipartFile thumbnailFile,
+                                              @RequestBody CreateVidoeEntityRequest request) throws IOException, SendVideoTaskException, InvalidVideoFormatException {
+        videoService.createVideoWithFilesUpload(videoFile, thumbnailFile, request);
         return ResponseEntity.ok().body("Video uploaded");
     }
 
