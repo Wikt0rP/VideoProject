@@ -43,7 +43,7 @@ public class VideoConsumer {
             }
 
             System.out.println("▶️ Mp4 to HLS conversion started  : " + taskId);
-            String resultPath = videoService.mp4ToHLS(file.getAbsolutePath());
+            String resultPath = videoService.convertToHls(file.getAbsolutePath());
             System.out.println("✅ Successfully converted to HLS: " + taskId);
             if(!resultPath.isEmpty()){
                 videoService.setVideoPath(videoId, resultPath);

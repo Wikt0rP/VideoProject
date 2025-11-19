@@ -55,7 +55,7 @@ public class VideoService {
 
         AppUser appUser = userValidationResponse.user();
 
-        validateFileFormat(fileVideo);
+//        validateFileFormat(fileVideo);
         Video video = new Video(createVidoeEntityRequest.title(), createVidoeEntityRequest.description(), appUser, "", "");
         videoRepository.save(video);
 
@@ -89,7 +89,7 @@ public class VideoService {
         }
     }
 
-    public String mp4ToHLS(String inputPath) {
+    public String convertToHls(String inputPath) {
         File source = new File(inputPath);
         if (!source.exists()) {
             System.err.println("Source file does not exist: " + inputPath);
