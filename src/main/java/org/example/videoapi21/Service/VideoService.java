@@ -131,23 +131,20 @@ public class VideoService {
 
 
         return new String[]{
-                ffmpegPath,                        // pełna ścieżka do ffmpeg.exe
-                "-i", source.getAbsolutePath(),    // plik wejściowy
+                ffmpegPath,
+                "-i", source.getAbsolutePath(),
 
-                // 🎥 WIDEO
-                "-c:v", "h264_nvenc",              // kodek wideo (NVENC na GPU NVIDIA)
-                "-preset", "p1",                 // preset kompresji (patrz lista poniżej)
-                "-b:v", "9M",                     // bitrate wideo: 15 megabitów na sekundę
-                "-s", "3440x1440",                 // rozdzielczość: 3440x1440 (UWAGA: wymusza skalowanie)
-                "-r", "60",                        // liczba klatek na sekundę: 60 fps
+                "-c:v", "h264_nvenc",              // kodek wideo
+                "-preset", "p1",                 // preset kompresji
+                "-b:v", "9M",                     // bitrate
+                //"-s", "3440x1440",                 // rozdzielczość: 3440x1440
+                //"-r", "60",                        // liczba klatek na sekundę: 60 fps
 
-                // 🔊 AUDIO
                 "-c:a", "aac",                     // kodek audio: AAC
-                "-b:a", "128k",                    // bitrate audio: 128 kbps
-                "-ar", "44100",                    // częstotliwość próbkowania: 44.1 kHz
+                "-b:a", "128k",
+                "-ar", "44100",
                 "-ac", "2",                        // liczba kanałów: stereo
 
-                // 📦 FORMAT WYJŚCIOWY
                 "-f", "hls",                       // format wyjściowy: HLS
                 "-hls_time", "6",                  // długość segmentu w sekundach
                 "-hls_list_size", "0",             // pełna lista segmentów
