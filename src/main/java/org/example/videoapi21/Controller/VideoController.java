@@ -2,8 +2,6 @@ package org.example.videoapi21.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.example.videoapi21.Entity.Video;
-import org.example.videoapi21.Exception.InvalidVideoFormatException;
-import org.example.videoapi21.Exception.SendVideoTaskException;
 import org.example.videoapi21.Repository.VideoRepository;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
 import org.example.videoapi21.Response.VideoCreateResponse;
@@ -13,7 +11,6 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,28 +55,8 @@ public class VideoController {
     }
 
 
-    @GetMapping("/{folder}/{filename:.+}")
-    public ResponseEntity<FileSystemResource> getHlsFile(
-            @PathVariable String folder,
-            @PathVariable String filename) {
-
-        File file = new File(VIDEO_HLS + "/" + folder + "/" + filename);
-
-        System.out.println("Searching for file: " + file.getAbsolutePath());
-
-        if (!file.exists()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        MediaType mediaType = filename.endsWith(".m3u8")
-                ? MediaType.parseMediaType("application/vnd.apple.mpegurl")
-                : MediaType.parseMediaType("video/mp2t");
-
-        System.out.println("File found: " + file.getName());
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + filename)
-                .contentType(mediaType)
-                .body(new FileSystemResource(file));
+    @GetMapping("/{uuid}")
+    public ResponseEntity<FileSystemResource> getHlsFile(@PathVariable String uuid) {
+        return videoService.getVideoFromUUID(uuid);
     }
 }

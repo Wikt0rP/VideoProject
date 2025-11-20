@@ -8,8 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface VideoRepository extends JpaRepository<Video,Long> {
-    Optional<Video> findVideoById(Long id);
-    Optional<Video> findByUuid(UUID uuid);
+    Optional<Video> getVideoById(Long id);
+    Optional<Video> getVideoByUuid(UUID uuid);
     List<Video> findAll();
 
 }
