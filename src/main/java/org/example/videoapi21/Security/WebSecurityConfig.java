@@ -39,9 +39,10 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/user/auth/register",
-                                "/user/auth/login"
+                                "/user/auth/login",
+                                "/api/videos/recent",
+                                "/api/videos/{uuid}"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/videos/{folder}/{filename:.+}").permitAll()
                         .requestMatchers(
                                 "/user-dashboard",
                                 "/api/videos/upload",

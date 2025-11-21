@@ -7,6 +7,8 @@ import org.example.videoapi21.Request.CreateVidoeEntityRequest;
 import org.example.videoapi21.Response.VideoCreateResponse;
 import org.example.videoapi21.Service.VideoService;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -58,5 +60,11 @@ public class VideoController {
     @GetMapping("/{uuid}")
     public ResponseEntity<FileSystemResource> getHlsFile(@PathVariable String uuid) {
         return videoService.getVideoFromUUID(uuid);
+    }
+    @GetMapping("/recent")
+    public ResponseEntity<Page<Video>> getRecentVideos(Pageable pageable) {
+        Page<Video> videoPage = videoService.getRecentVideos(pageable);
+        return ResponseEntity.ok()
+                .body(videoPage);
     }
 }

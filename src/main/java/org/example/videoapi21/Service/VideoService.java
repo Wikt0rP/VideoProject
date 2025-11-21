@@ -12,6 +12,8 @@ import org.example.videoapi21.Response.UserValidationResponse;
 import org.example.videoapi21.Response.VideoCreateResponse;
 import org.springframework.core.io.FileSystemResource;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -132,6 +134,10 @@ public class VideoService {
             throw new VideoNotFoundException("Video path might not exist");
         }
         return ResponseEntity.ok(videoResource);
+    }
+
+    public Page<Video> getRecentVideos(Pageable pageable) {
+        return  videoRepository.findAllWithValidPath(pageable);
     }
 
 
