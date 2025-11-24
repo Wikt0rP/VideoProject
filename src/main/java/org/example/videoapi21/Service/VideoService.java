@@ -1,7 +1,6 @@
 package org.example.videoapi21.Service;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.io.FilenameUtils;
 import org.example.videoapi21.Component.UserComponent;
 import org.example.videoapi21.Entity.AppUser;
 import org.example.videoapi21.Entity.Video;
@@ -11,6 +10,11 @@ import org.example.videoapi21.Repository.VideoRepository;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
 import org.example.videoapi21.Response.UserValidationResponse;
 import org.example.videoapi21.Response.VideoCreateResponse;
+import org.springframework.core.io.FileSystemResource;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -45,48 +49,32 @@ public class VideoService {
         this.userComponent = userComponent;
     }
 
-    public ResponseEntity<VideoCreateResponse> createVideoWithFilesUpload(MultipartFile fileVideo, MultipartFile fileThumbnail, CreateVidoeEntityRequest createVidoeEntityRequest, HttpServletRequest request)
+    public ResponseEntity<VideoCreateResponse> createVideoWithFilesUpload(MultipartFile fileVideo,
+            MultipartFile fileThumbnail, CreateVidoeEntityRequest createVidoeEntityRequest, HttpServletRequest request)
             throws IOException, SendVideoTaskException, InvalidVideoFormatException, BadCredentialsException {
 
         UserValidationResponse userValidationResponse = userComponent.getUserFromRequest(request);
-        if(!userValidationResponse.status().equals("OK")){
+        if (!userValidationResponse.status().equals("OK")) {
             throw new BadCredentialsException("Unsuccessful token validation");
         }
 
         AppUser appUser = userValidationResponse.user();
-
-//        validateFileFormat(fileVideo);
-        Video video = new Video(createVidoeEntityRequest.title(), createVidoeEntityRequest.description(), appUser, "", "");
+        Video video = new Video(createVidoeEntityRequest.title(), createVidoeEntityRequest.description(), appUser, "",
+                "");
         videoRepository.save(video);
 
         handleVideoUpload(fileVideo, video.getId());
         handleThumbnailUpload(fileThumbnail, video.getId());
 
         return ResponseEntity.ok(
-                new VideoCreateResponse(video.getTitle(),video.getDescription())
-        );
+                new VideoCreateResponse(video.getTitle(), video.getDescription()));
     }
 
-    private void handleVideoUpload(MultipartFile fileVideo, Long videoId) throws IOException {
-        String filename = UUID.randomUUID() + "_" + fileVideo.getOriginalFilename();
-        Path filePath = videoStorage.resolve(filename);
-        Files.copy(fileVideo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        System.out.println("File saved: " + filePath.toAbsolutePath());
-
-        videoProducer.sendVideoTask(filePath.toAbsolutePath().toString(), videoId);
-    }
-
-    public void handleThumbnailUpload(MultipartFile file, Long videoId) throws InvalidImageFormatException, CouldNotSaveFileException {
+    public void handleThumbnailUpload(MultipartFile file, Long videoId)
+            throws InvalidImageFormatException, CouldNotSaveFileException {
         BufferedImage image = GetBufferedImage(file);
         String thumbnailPath = saveAsJpg(image);
         setThumbnailPath(videoId, thumbnailPath);
-    }
-
-    private static void validateFileFormat(MultipartFile file) throws InvalidVideoFormatException {
-        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-        if(!"mp4".equalsIgnoreCase(extension)){
-            throw new InvalidVideoFormatException("Uploaded video should be in accepted format ex. MP4");
-        }
     }
 
     public String convertToHls(String inputPath) {
@@ -107,14 +95,13 @@ public class VideoService {
         String playlistPath = outputDir.getAbsolutePath() + File.separator + "playlist.m3u8";
         String[] command = getFfmpegString(outputDir, source, playlistPath);
 
-
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.inheritIO();
             Process process = pb.start();
             int exitCode = process.waitFor();
 
-            if (exitCode == 0){
+            if (exitCode == 0) {
                 return playlistPath;
             } else {
                 System.err.println("ffmpeg finished with error code: " + exitCode);
@@ -126,60 +113,104 @@ public class VideoService {
         }
     }
 
-    private String[] getFfmpegString(File outputDir, File source, String playlistPath) {
-        String segmentPattern = outputDir.getAbsolutePath() + File.separator + "segment%d.ts";
-
-
-        return new String[]{
-                ffmpegPath,
-                "-i", source.getAbsolutePath(),
-
-                "-c:v", "h264_nvenc",              // kodek wideo
-                "-preset", "p1",                 // preset kompresji
-                "-b:v", "9M",                     // bitrate
-                //"-s", "3440x1440",                 // rozdzielczość: 3440x1440
-                //"-r", "60",                        // liczba klatek na sekundę: 60 fps
-
-                "-c:a", "aac",                     // kodek audio: AAC
-                "-b:a", "128k",
-                "-ar", "44100",
-                "-ac", "2",                        // liczba kanałów: stereo
-
-                "-f", "hls",                       // format wyjściowy: HLS
-                "-hls_time", "6",                  // długość segmentu w sekundach
-                "-hls_list_size", "0",             // pełna lista segmentów
-                "-hls_segment_filename", segmentPattern, // wzorzec nazw segmentów
-                playlistPath                       // ścieżka do playlisty .m3u8
-        };
-    }
-
-    public void setVideoPath(Long videoID, String vidoPath) throws UnableToSetResourcePath{
-        Optional<Video> video = videoRepository.findVideoById(videoID);
-        if(video.isPresent()){
+    public void setVideoPath(Long videoID, String vidoPath) throws UnableToSetResourcePath {
+        Optional<Video> video = videoRepository.getVideoById(videoID);
+        if (video.isPresent()) {
             Video videoEntity = video.get();
             videoEntity.setVideoPath(vidoPath);
             videoRepository.save(videoEntity);
-        }else{
+        } else {
             throw new UnableToSetResourcePath("Video could not be found by id, path to resources not set");
         }
     }
 
-    private void setThumbnailPath(Long videoID, String thumbnailPath) throws UnableToSetResourcePath{
-        Optional<Video> video = videoRepository.findVideoById(videoID);
-        if(video.isPresent()){
+    public ResponseEntity<FileSystemResource> getVideoFromUUID(String uuid)
+            throws VideoNotFoundException {
+        UUID uuidObj = UUID.fromString(uuid);
+        Video video = videoRepository.getVideoByUuid(uuidObj)
+                .orElseThrow(() -> new VideoNotFoundException("Video could not be found by uuid"));
+
+        FileSystemResource videoResource = new FileSystemResource(video.getVideoPath());
+        if (!videoResource.exists() || !videoResource.isReadable()) {
+            throw new VideoNotFoundException("Video path might not exist");
+        }
+        return ResponseEntity.ok(videoResource);
+    }
+
+    public ResponseEntity<FileSystemResource> getSegmentFile(String uuid, String segmentName) {
+        UUID uuidObj = UUID.fromString(uuid);
+        Video video = videoRepository.getVideoByUuid(uuidObj)
+                .orElseThrow(() -> new VideoNotFoundException("Video not found"));
+
+        Path playlistPath = Paths.get(video.getVideoPath());
+        Path videoDir = playlistPath.getParent();
+        Path segmentPath = videoDir.resolve(segmentName + ".ts");
+
+        FileSystemResource resource = new FileSystemResource(segmentPath);
+        if (!resource.exists() || !resource.isReadable()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("video/MP2T"))
+                .body(resource);
+    }
+
+    public Page<Video> getRecentVideos(Pageable pageable) {
+        return videoRepository.findAllWithValidPath(pageable);
+    }
+
+    private String[] getFfmpegString(File outputDir, File source, String playlistPath) {
+        String segmentPattern = outputDir.getAbsolutePath() + File.separator + "segment%d.ts";
+
+        return new String[] {
+                ffmpegPath,
+                "-i", source.getAbsolutePath(),
+
+                "-c:v", "h264_nvenc", // kodek wideo
+                "-preset", "p1", // preset kompresji
+                "-b:v", "9M", // bitrate
+                // "-s", "3440x1440", // rozdzielczość: 3440x1440
+                // "-r", "60", // liczba klatek na sekundę: 60 fps
+
+                "-c:a", "aac", // kodek audio: AAC
+                "-b:a", "128k",
+                "-ar", "44100",
+                "-ac", "2", // liczba kanałów: stereo
+
+                "-f", "hls", // format wyjściowy: HLS
+                "-hls_time", "6", // długość segmentu w sekundach
+                "-hls_list_size", "0", // pełna lista segmentów
+                "-hls_segment_filename", segmentPattern, // wzorzec nazw segmentów
+                playlistPath // ścieżka do playlisty .m3u8
+        };
+    }
+
+    private void handleVideoUpload(MultipartFile fileVideo, Long videoId) throws IOException {
+        String filename = UUID.randomUUID() + "_" + fileVideo.getOriginalFilename();
+        Path filePath = videoStorage.resolve(filename);
+        Files.copy(fileVideo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        System.out.println("File saved: " + filePath.toAbsolutePath());
+
+        videoProducer.sendVideoTask(filePath.toAbsolutePath().toString(), videoId);
+    }
+
+    private void setThumbnailPath(Long videoID, String thumbnailPath) throws UnableToSetResourcePath {
+        Optional<Video> video = videoRepository.getVideoById(videoID);
+        if (video.isPresent()) {
             Video videoEntity = video.get();
             videoEntity.setThumbnailPath(thumbnailPath);
             videoRepository.save(videoEntity);
-        }else{
+        } else {
             throw new UnableToSetResourcePath("Video could not be found by id, path to resources not set");
         }
     }
 
-    private static BufferedImage GetBufferedImage(MultipartFile file) throws InvalidImageFormatException{
-        try{
+    private static BufferedImage GetBufferedImage(MultipartFile file) throws InvalidImageFormatException {
+        try {
             BufferedImage image = ImageIO.read(file.getInputStream());
-            if(image == null){
-                throw  new InvalidImageFormatException("Can not process file");
+            if (image == null) {
+                throw new InvalidImageFormatException("Can not process file");
             }
             return removeTransparency(image);
         } catch (IOException e) {
@@ -191,8 +222,7 @@ public class VideoService {
         BufferedImage rgbImage = new BufferedImage(
                 image.getWidth(),
                 image.getHeight(),
-                BufferedImage.TYPE_INT_RGB
-        );
+                BufferedImage.TYPE_INT_RGB);
         Graphics2D g = rgbImage.createGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, image.getWidth(), image.getHeight());
@@ -202,8 +232,8 @@ public class VideoService {
         return rgbImage;
     }
 
-    private static String saveAsJpg(BufferedImage image) throws CouldNotSaveFileException{
-        try{
+    private static String saveAsJpg(BufferedImage image) throws CouldNotSaveFileException {
+        try {
             File dir = new File(thumbnailPath);
             if (!dir.exists()) {
                 dir.mkdirs();

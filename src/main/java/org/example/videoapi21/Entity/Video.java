@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -26,6 +27,7 @@ public class Video {
     private AppUser author;
     private String videoPath;
     private String thumbnailPath;
+    private LocalDateTime createdAt;
 
     public Video(String title, String description, AppUser author, String videoPath, String thumbnailPath) {
         this.title = title;
@@ -35,6 +37,6 @@ public class Video {
         this.thumbnailPath = thumbnailPath;
 
         this.uuid = UUID.randomUUID();
-
+        this.createdAt = LocalDateTime.now();
     }
 }

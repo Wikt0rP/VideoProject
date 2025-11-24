@@ -2,18 +2,17 @@ package org.example.videoapi21.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.example.videoapi21.Entity.Video;
-import org.example.videoapi21.Exception.InvalidVideoFormatException;
-import org.example.videoapi21.Exception.SendVideoTaskException;
 import org.example.videoapi21.Repository.VideoRepository;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
 import org.example.videoapi21.Response.VideoCreateResponse;
 import org.example.videoapi21.Service.VideoService;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,7 +36,6 @@ public class VideoController {
         this.videoRepository = videoRepository;
     }
 
-
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<VideoCreateResponse> uploadVideo(
             @RequestPart("video") MultipartFile videoFile,
@@ -50,36 +48,28 @@ public class VideoController {
         return videoService.createVideoWithFilesUpload(videoFile, thumbnailFile, createVidoeEntityRequest, request);
     }
 
-
     @GetMapping("/test")
-    public ResponseEntity<?> getAll(HttpServletRequest request){
+    public ResponseEntity<?> getAll(HttpServletRequest request) {
         List<Video> videoList = videoRepository.findAll();
         return ResponseEntity.ok().body(videoList);
     }
 
+    @GetMapping("/{uuid}/playlist.m3u8")
+    public ResponseEntity<FileSystemResource> getPlaylist(@PathVariable String uuid) {
+        return videoService.getVideoFromUUID(uuid);
+    }
 
-    @GetMapping("/{folder}/{filename:.+}")
-    public ResponseEntity<FileSystemResource> getHlsFile(
-            @PathVariable String folder,
-            @PathVariable String filename) {
+    @GetMapping("/{uuid}/{segment}.ts")
+    public ResponseEntity<FileSystemResource> getSegment(
+            @PathVariable String uuid,
+            @PathVariable String segment) {
+        return videoService.getSegmentFile(uuid, segment);
+    }
 
-        File file = new File(VIDEO_HLS + "/" + folder + "/" + filename);
-
-        System.out.println("Searching for file: " + file.getAbsolutePath());
-
-        if (!file.exists()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        MediaType mediaType = filename.endsWith(".m3u8")
-                ? MediaType.parseMediaType("application/vnd.apple.mpegurl")
-                : MediaType.parseMediaType("video/mp2t");
-
-        System.out.println("File found: " + file.getName());
-
+    @GetMapping("/recent")
+    public ResponseEntity<Page<Video>> getRecentVideos(Pageable pageable) {
+        Page<Video> videoPage = videoService.getRecentVideos(pageable);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + filename)
-                .contentType(mediaType)
-                .body(new FileSystemResource(file));
+                .body(videoPage);
     }
 }
