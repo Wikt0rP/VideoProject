@@ -88,6 +88,7 @@ function createVideoCard(video) {
         </div>
         <div class="info">
             <div class="title">${escapeHtml(video.title || 'Untitled')}</div>
+            <div class="author">${escapeHtml(video.author ? video.author.username : 'Unknown Author')}</div>
             <div class="desc">${escapeHtml(video.description || 'No description')}</div>
         </div>
     `;

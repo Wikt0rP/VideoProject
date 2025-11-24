@@ -36,7 +36,6 @@ public class VideoController {
         this.videoRepository = videoRepository;
     }
 
-
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<VideoCreateResponse> uploadVideo(
             @RequestPart("video") MultipartFile videoFile,
@@ -49,18 +48,24 @@ public class VideoController {
         return videoService.createVideoWithFilesUpload(videoFile, thumbnailFile, createVidoeEntityRequest, request);
     }
 
-
     @GetMapping("/test")
-    public ResponseEntity<?> getAll(HttpServletRequest request){
+    public ResponseEntity<?> getAll(HttpServletRequest request) {
         List<Video> videoList = videoRepository.findAll();
         return ResponseEntity.ok().body(videoList);
     }
 
-
-    @GetMapping("/{uuid}")
-    public ResponseEntity<FileSystemResource> getHlsFile(@PathVariable String uuid) {
+    @GetMapping("/{uuid}/playlist.m3u8")
+    public ResponseEntity<FileSystemResource> getPlaylist(@PathVariable String uuid) {
         return videoService.getVideoFromUUID(uuid);
     }
+
+    @GetMapping("/{uuid}/{segment}.ts")
+    public ResponseEntity<FileSystemResource> getSegment(
+            @PathVariable String uuid,
+            @PathVariable String segment) {
+        return videoService.getSegmentFile(uuid, segment);
+    }
+
     @GetMapping("/recent")
     public ResponseEntity<Page<Video>> getRecentVideos(Pageable pageable) {
         Page<Video> videoPage = videoService.getRecentVideos(pageable);

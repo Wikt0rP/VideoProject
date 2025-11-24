@@ -13,7 +13,7 @@ export function openPlayer(video) {
     modal.style.display = 'flex';
 
     // HLS Logic
-    const hlsUrl = `${API_BASE}/api/videos/${video.uuid}`;
+    const hlsUrl = `${API_BASE}/api/videos/${video.uuid}/playlist.m3u8`;
 
     if (Hls.isSupported()) {
         if (hls) {

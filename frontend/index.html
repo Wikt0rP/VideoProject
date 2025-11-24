@@ -12,15 +12,41 @@
 <body>
 
     <header>
-        <div class="logo">VideoApp</div>
+        <div class="header-left">
+            <button id="menu-btn" class="menu-btn">
+                <span>&#9776;</span>
+            </button>
+            <div class="logo">VideoApp</div>
+        </div>
         <div id="auth-container" class="auth-container"></div>
     </header>
 
-    <main>
-        <div id="video-grid" class="video-grid">
-            <!-- Video cards will be injected here -->
-        </div>
-    </main>
+    <div class="app-container">
+        <aside id="sidebar">
+            <a href="#" class="nav-item">
+                <div class="nav-icon">&#127968;</div>
+                <div class="nav-text">Home</div>
+            </a>
+            <a href="#" class="nav-item">
+                <div class="nav-icon">&#128249;</div>
+                <div class="nav-text">Your Videos</div>
+            </a>
+            <a href="#" class="nav-item">
+                <div class="nav-icon">&#128337;</div>
+                <div class="nav-text">History</div>
+            </a>
+            <a href="#" class="nav-item">
+                <div class="nav-icon">&#9881;</div>
+                <div class="nav-text">Settings</div>
+            </a>
+        </aside>
+
+        <main>
+            <div id="video-grid" class="video-grid">
+                <!-- Video cards will be injected here -->
+            </div>
+        </main>
+    </div>
 
     <!-- Player Modal -->
     <div id="player-modal" class="modal">

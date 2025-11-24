@@ -41,17 +41,16 @@ public class WebSecurityConfig {
                                 "/user/auth/register",
                                 "/user/auth/login",
                                 "/api/videos/recent",
-                                "/api/videos/{uuid}"
-                        ).permitAll()
+                                "/api/videos/{uuid}/playlist.m3u8",
+                                "/api/videos/{uuid}/*.ts")
+                        .permitAll()
                         .requestMatchers(
                                 "/user-dashboard",
                                 "/api/videos/upload",
-                                "/api/videos/test"
-                        )
+                                "/api/videos/test")
                         .authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationJwtToken()));
-
 
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
