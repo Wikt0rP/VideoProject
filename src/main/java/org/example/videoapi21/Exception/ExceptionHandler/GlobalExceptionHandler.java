@@ -1,6 +1,7 @@
 package org.example.videoapi21.Exception.ExceptionHandler;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.example.videoapi21.Exception.UnableToSetResourcePath;
 import org.example.videoapi21.Response.CustomErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -22,5 +23,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public CustomErrorResponse handleUnableToSetResourcePathException(UnableToSetResourcePath ex, HttpServletRequest request){
         return new CustomErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(value = ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public CustomErrorResponse handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request){
+        return new CustomErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage(), request.getRequestURI());
     }
 }

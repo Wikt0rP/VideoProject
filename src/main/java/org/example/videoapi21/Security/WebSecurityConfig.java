@@ -42,7 +42,9 @@ public class WebSecurityConfig {
                                 "/user/auth/login",
                                 "/api/videos/recent",
                                 "/api/videos/{uuid}/playlist.m3u8",
-                                "/api/videos/{uuid}/*.ts")
+                                "/api/videos/{uuid}/*.ts",
+                                "/api/videos/{uuid}/thumbnail"
+                                )
                         .permitAll()
                         .requestMatchers(
                                 "/user-dashboard",

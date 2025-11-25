@@ -24,7 +24,6 @@ import java.util.List;
 @RequestMapping("/api/videos")
 public class VideoController {
     private static final String VIDEO_DIR = "video";
-    private static final String VIDEO_HLS = "hls_output/videos";
     private final Path videoStorage = Paths.get(VIDEO_DIR);
 
     private final VideoService videoService;
@@ -71,5 +70,10 @@ public class VideoController {
         Page<Video> videoPage = videoService.getRecentVideos(pageable);
         return ResponseEntity.ok()
                 .body(videoPage);
+    }
+
+    @GetMapping("/{uuid}/thumbnail")
+    public  ResponseEntity<FileSystemResource> getThumbnail(@PathVariable String uuid){
+        return videoService.getThumbnailFromUUID(uuid);
     }
 }

@@ -1,6 +1,7 @@
 package org.example.videoapi21.Service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.example.videoapi21.Component.UserComponent;
 import org.example.videoapi21.Entity.AppUser;
 import org.example.videoapi21.Entity.Video;
@@ -18,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -132,9 +134,20 @@ public class VideoService {
 
         FileSystemResource videoResource = new FileSystemResource(video.getVideoPath());
         if (!videoResource.exists() || !videoResource.isReadable()) {
-            throw new VideoNotFoundException("Video path might not exist");
+            throw new ResourceNotFoundException("Video path might not exist");
         }
         return ResponseEntity.ok(videoResource);
+    }
+
+    public ResponseEntity<FileSystemResource> getThumbnailFromUUID(String uuid){
+        UUID uuidObj = UUID.fromString(uuid);
+        Video video = videoRepository.getVideoByUuid(uuidObj)
+                .orElseThrow(() -> new VideoNotFoundException("Video could not be found by uuid"));
+        FileSystemResource thumbnailFile = new FileSystemResource(video.getThumbnailPath());
+        if(!thumbnailFile.exists() || !thumbnailFile.isReadable()){
+            throw new ResourceNotFoundException("Thumbnail path might not exist");
+        }
+        return ResponseEntity.ok(thumbnailFile);
     }
 
     public ResponseEntity<FileSystemResource> getSegmentFile(String uuid, String segmentName) {
