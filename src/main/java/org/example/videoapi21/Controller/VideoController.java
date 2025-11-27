@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -47,6 +48,14 @@ public class VideoController {
         return videoService.createVideoWithFilesUpload(videoFile, thumbnailFile, createVidoeEntityRequest, request);
     }
 
+    @PatchMapping(value = "/{uuid}/update/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateVideoThumbnail(@PathVariable String uuid,
+                                                  @RequestPart("thumbnail") MultipartFile thumbnailFile,
+                                                  HttpServletRequest request) throws Exception {
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.handleThumbnailUpdate(thumbnailFile, videoUUID, request);
+    }
+
     @GetMapping("/test")
     public ResponseEntity<?> getAll(HttpServletRequest request) {
         List<Video> videoList = videoRepository.findAll();
@@ -55,14 +64,16 @@ public class VideoController {
 
     @GetMapping("/{uuid}/playlist.m3u8")
     public ResponseEntity<FileSystemResource> getPlaylist(@PathVariable String uuid) {
-        return videoService.getVideoFromUUID(uuid);
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.getVideoFromUUID(videoUUID);
     }
 
     @GetMapping("/{uuid}/{segment}.ts")
     public ResponseEntity<FileSystemResource> getSegment(
             @PathVariable String uuid,
             @PathVariable String segment) {
-        return videoService.getSegmentFile(uuid, segment);
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.getSegmentFile(videoUUID, segment);
     }
 
     @GetMapping("/recent")
@@ -74,6 +85,7 @@ public class VideoController {
 
     @GetMapping("/{uuid}/thumbnail")
     public  ResponseEntity<FileSystemResource> getThumbnail(@PathVariable String uuid){
-        return videoService.getThumbnailFromUUID(uuid);
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.getThumbnailFromUUID(videoUUID);
     }
 }
