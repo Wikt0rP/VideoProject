@@ -20,6 +20,7 @@ public class Video {
     @Column(nullable = false, unique = true)
     private UUID uuid;
     private String title;
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @ManyToOne

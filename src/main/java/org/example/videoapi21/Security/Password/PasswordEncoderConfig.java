@@ -1,4 +1,4 @@
-package org.example.videoapi21.Security;
+package org.example.videoapi21.Security.Password;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

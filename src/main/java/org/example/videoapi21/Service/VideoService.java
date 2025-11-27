@@ -1,6 +1,7 @@
 package org.example.videoapi21.Service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.example.videoapi21.Component.UserComponent;
 import org.example.videoapi21.Entity.AppUser;
 import org.example.videoapi21.Entity.Video;
@@ -10,14 +11,19 @@ import org.example.videoapi21.Repository.VideoRepository;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
 import org.example.videoapi21.Response.UserValidationResponse;
 import org.example.videoapi21.Response.VideoCreateResponse;
+import org.example.videoapi21.Security.UserDetailsImpl;
 import org.springframework.core.io.FileSystemResource;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -70,6 +76,19 @@ public class VideoService {
                 new VideoCreateResponse(video.getTitle(), video.getDescription()));
     }
 
+    public ResponseEntity<String> handleThumbnailUpdate(MultipartFile fileImg, UUID videoUUID, HttpServletRequest request)
+            throws ResourceNotFoundException, AccessDeniedException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Video video = videoRepository.getVideoByUuid(videoUUID)
+                .orElseThrow(() -> new ResourceNotFoundException("Video Not Found"));
+
+        if(!userDetails.getId().equals(video.getAuthor().getId())) {
+            throw new AccessDeniedException("Access Denied");
+        }
+            handleThumbnailUpload(fileImg, video.getId());
+        return ResponseEntity.ok("Changed thumbnail for video: " + video.getTitle());
+    }
     public void handleThumbnailUpload(MultipartFile file, Long videoId)
             throws InvalidImageFormatException, CouldNotSaveFileException {
         BufferedImage image = GetBufferedImage(file);
@@ -124,22 +143,30 @@ public class VideoService {
         }
     }
 
-    public ResponseEntity<FileSystemResource> getVideoFromUUID(String uuid)
+    public ResponseEntity<FileSystemResource> getVideoFromUUID(UUID uuid)
             throws VideoNotFoundException {
-        UUID uuidObj = UUID.fromString(uuid);
-        Video video = videoRepository.getVideoByUuid(uuidObj)
+        Video video = videoRepository.getVideoByUuid(uuid)
                 .orElseThrow(() -> new VideoNotFoundException("Video could not be found by uuid"));
 
         FileSystemResource videoResource = new FileSystemResource(video.getVideoPath());
         if (!videoResource.exists() || !videoResource.isReadable()) {
-            throw new VideoNotFoundException("Video path might not exist");
+            throw new ResourceNotFoundException("Video path might not exist");
         }
         return ResponseEntity.ok(videoResource);
     }
 
-    public ResponseEntity<FileSystemResource> getSegmentFile(String uuid, String segmentName) {
-        UUID uuidObj = UUID.fromString(uuid);
-        Video video = videoRepository.getVideoByUuid(uuidObj)
+    public ResponseEntity<FileSystemResource> getThumbnailFromUUID(UUID uuid){
+        Video video = videoRepository.getVideoByUuid(uuid)
+                .orElseThrow(() -> new VideoNotFoundException("Video could not be found by uuid"));
+        FileSystemResource thumbnailFile = new FileSystemResource(video.getThumbnailPath());
+        if(!thumbnailFile.exists() || !thumbnailFile.isReadable()){
+            throw new ResourceNotFoundException("Thumbnail path might not exist");
+        }
+        return ResponseEntity.ok(thumbnailFile);
+    }
+
+    public ResponseEntity<FileSystemResource> getSegmentFile(UUID uuid, String segmentName) {
+        Video video = videoRepository.getVideoByUuid(uuid)
                 .orElseThrow(() -> new VideoNotFoundException("Video not found"));
 
         Path playlistPath = Paths.get(video.getVideoPath());

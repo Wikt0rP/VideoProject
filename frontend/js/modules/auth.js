@@ -1,22 +1,85 @@
 import { API_BASE } from './utils.js';
 
-export function checkAuth() {
-    const user = localStorage.getItem('user');
-    renderAuth(user ? JSON.parse(user) : null);
+export async function checkAuth() {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+        renderAuth(null);
+        return;
+    }
+
+    const user = JSON.parse(userStr);
+
+    // Verify token with backend
+    try {
+        const response = await fetch(`${API_BASE}/api/videos/recent?page=0&size=1`, {
+            headers: {
+                'Authorization': `Bearer ${user.token}`
+            }
+        });
+
+        // If backend is down or token is invalid, logout
+        if (!response.ok) {
+            console.warn('Token validation failed, logging out');
+            localStorage.removeItem('user');
+            renderAuth(null);
+            return;
+        }
+
+        // Token is valid, render as logged in
+        renderAuth(user);
+    } catch (error) {
+        // Backend is unreachable, logout
+        console.warn('Backend unreachable, logging out:', error);
+        localStorage.removeItem('user');
+        renderAuth(null);
+    }
 }
 
 export function renderAuth(user) {
     const container = document.getElementById('auth-container');
+    const uploadBtn = document.getElementById('upload-btn');
 
     if (user) {
         container.innerHTML = `
-            <div class="user-profile" id="user-profile-btn">
-                <div class="user-avatar">${user.name.charAt(0)}</div>
-                <div class="user-name">${user.name}</div>
+            <div class="user-dropdown">
+                <div class="user-profile" id="user-profile-btn">
+                    <div class="user-avatar">${user.name.charAt(0)}</div>
+                    <div class="user-name">${user.name}</div>
+                </div>
+                <div class="user-menu" id="user-menu">
+                    <div class="user-menu-item" id="profile-btn">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                        Profile
+                    </div>
+                    <div class="user-menu-item" id="logout-btn">
+                        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                        Logout
+                    </div>
+                </div>
             </div>
         `;
-        // Re-attach event listener since innerHTML wiped it
-        document.getElementById('user-profile-btn').addEventListener('click', logout);
+
+        // Toggle dropdown
+        document.getElementById('user-profile-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('user-menu').classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('user-menu');
+            if (menu) menu.classList.remove('show');
+        });
+
+        // Profile button (placeholder for now)
+        document.getElementById('profile-btn').addEventListener('click', () => {
+            alert('Profile page - coming soon!');
+        });
+
+        // Logout button
+        document.getElementById('logout-btn').addEventListener('click', logout);
+
+        if (uploadBtn) uploadBtn.style.display = 'flex';
     } else {
         container.innerHTML = `
             <button class="sign-in-btn" id="login-btn">
@@ -25,6 +88,7 @@ export function renderAuth(user) {
             </button>
         `;
         document.getElementById('login-btn').addEventListener('click', openAuthModal);
+        if (uploadBtn) uploadBtn.style.display = 'none';
     }
 }
 

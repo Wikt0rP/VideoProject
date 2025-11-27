@@ -1,7 +1,7 @@
 package org.example.videoapi21.Service;
 
-import org.example.videoapi21.Component.PasswordValidation;
 import org.example.videoapi21.Component.UserComponent;
+import org.example.videoapi21.DTO.RegisterValidationDTO;
 import org.example.videoapi21.Entity.AppUser;
 import org.example.videoapi21.Entity.Role;
 import org.example.videoapi21.Enum.ERole;
@@ -13,13 +13,13 @@ import org.example.videoapi21.Request.RegisterRequest;
 import org.example.videoapi21.Response.JwtResponse;
 import org.example.videoapi21.Response.RegisterResponse;
 import org.example.videoapi21.Security.JwtUtils;
-import org.example.videoapi21.Security.PasswordEncoderConfig;
+import org.example.videoapi21.Security.Password.PasswordEncoderConfig;
+import org.example.videoapi21.Security.Password.PasswordValidator;
 import org.example.videoapi21.Security.UserDetailsImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -33,7 +33,7 @@ import java.util.Objects;
 public class AuthUserService {
 
     private final AppUserRepository userRepository;
-    private final PasswordValidation passwordValidation;
+    private final PasswordValidator passwordValidator;
     private final PasswordEncoderConfig passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
@@ -41,10 +41,10 @@ public class AuthUserService {
 
     private final Logger logger = LoggerFactory.getLogger(AuthUserService.class);
 
-    public AuthUserService(AppUserRepository userRepository, PasswordValidation passwordValidation, PasswordEncoderConfig passwordEncoder, AuthenticationManager authenticationManager,
+    public AuthUserService(AppUserRepository userRepository, PasswordValidator passwordValidator, PasswordEncoderConfig passwordEncoder, AuthenticationManager authenticationManager,
                            JwtUtils jwtUtils, RoleRepository roleRepository, UserComponent userComponent) {
         this.userRepository = userRepository;
-        this.passwordValidation = passwordValidation;
+        this.passwordValidator = passwordValidator;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
@@ -58,11 +58,10 @@ public class AuthUserService {
      */
     public ResponseEntity<RegisterResponse> registerUser(RegisterRequest registerRequest) throws RegisterValidationUnsuccessfulException {
 
-        ResponseEntity<?> validationResponse = registerValidations(registerRequest);
-        if(validationResponse.getStatusCode().is4xxClientError()){
-            throw new RegisterValidationUnsuccessfulException(Objects.toString(validationResponse.getBody(), "Validation failed"));
+        RegisterValidationDTO registerValidationDTO = registerValidations(registerRequest);
+        if(!registerValidationDTO.isValid()){
+            throw new RegisterValidationUnsuccessfulException(registerValidationDTO.message(), "Validation failed");
         }
-
 
         Role role = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseGet(() -> roleRepository.save(new Role(ERole.ROLE_USER)));
@@ -98,17 +97,24 @@ public class AuthUserService {
 //     *  Validates email, password, username and checks if username already exists
 //     *  @return ResponseEntity with message
 //     */
-    private ResponseEntity<String> registerValidations(RegisterRequest registerRequest){
+    private RegisterValidationDTO registerValidations(RegisterRequest registerRequest){
+        String error = validationString(registerRequest);
 
-        if(!passwordValidation.isValidPassword(registerRequest.password(), registerRequest.username(), 3)){
-            return ResponseEntity.badRequest().body("Password validation unsuccessful");
-        }
-        if(registerRequest.username().length() < 3){
-            return ResponseEntity.badRequest().body("Username must be at least 3 characters long");
-        }
-        if(userRepository.existsByUsername(registerRequest.username())){
-            return ResponseEntity.badRequest().body("Username already exists");
-        }
-        return ResponseEntity.ok("Validations successful");
+        return (error == null)
+                ? new RegisterValidationDTO(true)
+                : new RegisterValidationDTO(false, error);
+    }
+
+    private String validationString(RegisterRequest r){
+        if (!passwordValidator.isValidPassword(r.password(), r.username(), 3))
+            return "Password validation unsuccessful";
+
+        if (r.username().length() < 3)
+            return "Username must be at least 3 characters long";
+
+        if (userRepository.existsByUsername(r.username()))
+            return "Username already exists";
+
+        return null;
     }
 }

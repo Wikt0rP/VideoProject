@@ -76,15 +76,11 @@ function createVideoCard(video) {
     card.className = 'video-card';
     card.addEventListener('click', () => openPlayer(video));
 
-    const placeholderHtml = `
-        <div class="thumbnail-placeholder">
-            <span>No Thumbnail</span>
-        </div>
-    `;
+    const thumbnailUrl = `${API_BASE}/api/videos/${video.uuid}/thumbnail`;
 
     card.innerHTML = `
         <div class="thumbnail-container">
-            ${placeholderHtml} 
+            <img src="${thumbnailUrl}" alt="${escapeHtml(video.title)}" class="thumbnail" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'thumbnail-placeholder\'><span>No Thumbnail</span></div>'">
         </div>
         <div class="info">
             <div class="title">${escapeHtml(video.title || 'Untitled')}</div>

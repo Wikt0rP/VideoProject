@@ -18,13 +18,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/videos")
 public class VideoController {
     private static final String VIDEO_DIR = "video";
-    private static final String VIDEO_HLS = "hls_output/videos";
     private final Path videoStorage = Paths.get(VIDEO_DIR);
 
     private final VideoService videoService;
@@ -48,6 +48,14 @@ public class VideoController {
         return videoService.createVideoWithFilesUpload(videoFile, thumbnailFile, createVidoeEntityRequest, request);
     }
 
+    @PatchMapping(value = "/{uuid}/update/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateVideoThumbnail(@PathVariable String uuid,
+                                                  @RequestPart("thumbnail") MultipartFile thumbnailFile,
+                                                  HttpServletRequest request) throws Exception {
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.handleThumbnailUpdate(thumbnailFile, videoUUID, request);
+    }
+
     @GetMapping("/test")
     public ResponseEntity<?> getAll(HttpServletRequest request) {
         List<Video> videoList = videoRepository.findAll();
@@ -56,14 +64,16 @@ public class VideoController {
 
     @GetMapping("/{uuid}/playlist.m3u8")
     public ResponseEntity<FileSystemResource> getPlaylist(@PathVariable String uuid) {
-        return videoService.getVideoFromUUID(uuid);
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.getVideoFromUUID(videoUUID);
     }
 
     @GetMapping("/{uuid}/{segment}.ts")
     public ResponseEntity<FileSystemResource> getSegment(
             @PathVariable String uuid,
             @PathVariable String segment) {
-        return videoService.getSegmentFile(uuid, segment);
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.getSegmentFile(videoUUID, segment);
     }
 
     @GetMapping("/recent")
@@ -71,5 +81,11 @@ public class VideoController {
         Page<Video> videoPage = videoService.getRecentVideos(pageable);
         return ResponseEntity.ok()
                 .body(videoPage);
+    }
+
+    @GetMapping("/{uuid}/thumbnail")
+    public  ResponseEntity<FileSystemResource> getThumbnail(@PathVariable String uuid){
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.getThumbnailFromUUID(videoUUID);
     }
 }

@@ -19,6 +19,9 @@
             <div class="logo">VideoApp</div>
         </div>
         <div id="auth-container" class="auth-container"></div>
+        <button id="upload-btn" class="upload-btn" style="display: none; margin-left: 16px;">
+            <span style="font-size: 1.2rem;">&#43;</span> Upload
+        </button>
     </header>
 
     <div class="app-container">
@@ -57,6 +60,7 @@
             </div>
             <div class="video-info">
                 <h2 id="player-title"></h2>
+                <p id="player-date" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;"></p>
                 <p id="player-desc"></p>
             </div>
         </div>
@@ -84,6 +88,29 @@
                 <input type="password" id="register-password" placeholder="Password">
                 <button class="auth-submit-btn">Register</button>
                 <button class="auth-back-btn">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="upload-modal" class="modal">
+        <div class="modal-content auth-content">
+            <div class="auth-form" style="border-radius: var(--border-radius);">
+                <h2>Upload Video</h2>
+                <input type="text" id="upload-title" placeholder="Video Title">
+                <textarea id="upload-desc" placeholder="Description" rows="3"
+                    style="resize: none; background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px; border-radius: var(--border-radius-sm); font-size: 1rem; outline: none; font-family: inherit;"></textarea>
+
+                <label for="upload-video" style="margin-top: 10px; display: block; color: var(--text-secondary);">Video
+                    File:</label>
+                <input type="file" id="upload-video" accept="video/*">
+
+                <label for="upload-thumbnail"
+                    style="margin-top: 10px; display: block; color: var(--text-secondary);">Thumbnail:</label>
+                <input type="file" id="upload-thumbnail" accept="image/png, image/jpeg, image/jpg">
+
+                <button class="auth-submit-btn" id="upload-submit-btn">Upload</button>
+                <button class="auth-back-btn" id="upload-cancel-btn">Cancel</button>
             </div>
         </div>
     </div>

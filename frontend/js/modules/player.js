@@ -6,9 +6,20 @@ export function openPlayer(video) {
     const modal = document.getElementById('player-modal');
     const videoEl = document.getElementById('video');
     const titleEl = document.getElementById('player-title');
+    const dateEl = document.getElementById('player-date');
     const descEl = document.getElementById('player-desc');
 
     titleEl.textContent = video.title;
+
+    // Format date to show only day
+    const uploadDate = new Date(video.createdAt);
+    const formattedDate = uploadDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    dateEl.textContent = `Uploaded: ${formattedDate}`;
     descEl.textContent = video.description;
     modal.style.display = 'flex';
 
