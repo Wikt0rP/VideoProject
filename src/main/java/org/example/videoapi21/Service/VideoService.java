@@ -6,10 +6,11 @@ import org.example.videoapi21.Component.UserComponent;
 import org.example.videoapi21.Entity.AppUser;
 import org.example.videoapi21.Entity.Video;
 import org.example.videoapi21.Exception.*;
+import org.example.videoapi21.Exception.UserNotFoundException;
 import org.example.videoapi21.Kafka.VideoProducer;
 import org.example.videoapi21.Repository.VideoRepository;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
-import org.example.videoapi21.Response.UserValidationResponse;
+import org.example.videoapi21.Response.ThumbnailUpdateResponse;
 import org.example.videoapi21.Response.VideoCreateResponse;
 import org.example.videoapi21.Security.UserDetailsImpl;
 import org.springframework.core.io.FileSystemResource;
@@ -23,7 +24,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -57,16 +57,10 @@ public class VideoService {
 
     public ResponseEntity<VideoCreateResponse> createVideoWithFilesUpload(MultipartFile fileVideo,
             MultipartFile fileThumbnail, CreateVidoeEntityRequest createVidoeEntityRequest, HttpServletRequest request)
-            throws IOException, SendVideoTaskException, InvalidVideoFormatException, BadCredentialsException {
+            throws IOException, SendVideoTaskException, InvalidVideoFormatException, UserNotFoundException {
 
-        UserValidationResponse userValidationResponse = userComponent.getUserFromRequest(request);
-        if (!userValidationResponse.status().equals("OK")) {
-            throw new BadCredentialsException("Unsuccessful token validation");
-        }
-
-        AppUser appUser = userValidationResponse.user();
-        Video video = new Video(createVidoeEntityRequest.title(), createVidoeEntityRequest.description(), appUser, "",
-                "");
+        AppUser appUser = userComponent.getUserFromRequest(request);
+        Video video = new Video(createVidoeEntityRequest.title(), createVidoeEntityRequest.description(), appUser);
         videoRepository.save(video);
 
         handleVideoUpload(fileVideo, video.getId());
@@ -76,19 +70,19 @@ public class VideoService {
                 new VideoCreateResponse(video.getTitle(), video.getDescription()));
     }
 
-    public ResponseEntity<String> handleThumbnailUpdate(MultipartFile fileImg, UUID videoUUID, HttpServletRequest request)
-            throws ResourceNotFoundException, AccessDeniedException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+    public ResponseEntity<ThumbnailUpdateResponse> handleThumbnailUpdate(MultipartFile fileImg, UUID videoUUID, HttpServletRequest request)
+            throws ResourceNotFoundException, AccessDeniedException, UserNotFoundException {
+        AppUser appUser = userComponent.getUserFromRequest(request);
         Video video = videoRepository.getVideoByUuid(videoUUID)
                 .orElseThrow(() -> new ResourceNotFoundException("Video Not Found"));
 
-        if(!userDetails.getId().equals(video.getAuthor().getId())) {
+        if(!appUser.getId().equals(video.getAuthor().getId())) {
             throw new AccessDeniedException("Access Denied");
         }
             handleThumbnailUpload(fileImg, video.getId());
-        return ResponseEntity.ok("Changed thumbnail for video: " + video.getTitle());
+        return ResponseEntity.ok(new ThumbnailUpdateResponse(video.getTitle(), videoUUID));
     }
+
     public void handleThumbnailUpload(MultipartFile file, Long videoId)
             throws InvalidImageFormatException, CouldNotSaveFileException {
         BufferedImage image = GetBufferedImage(file);
@@ -183,9 +177,16 @@ public class VideoService {
                 .body(resource);
     }
 
-    public Page<Video> getRecentVideos(Pageable pageable) {
-        return videoRepository.findAllWithValidPath(pageable);
+    public ResponseEntity<Page<Video>> getRecentVideos(Pageable pageable) {
+        return ResponseEntity.ok(videoRepository.findAllWithValidPath(pageable));
     }
+
+    public ResponseEntity<Page<Video>> getMyVideos(Pageable pageable, HttpServletRequest request) throws UserNotFoundException{
+        AppUser appUser = userComponent.getUserFromRequest(request);
+        return ResponseEntity.ok(videoRepository.findVideosByAuthor(appUser, pageable));
+    }
+
+
 
     private String[] getFfmpegString(File outputDir, File source, String playlistPath) {
         String segmentPattern = outputDir.getAbsolutePath() + File.separator + "segment%d.ts";
