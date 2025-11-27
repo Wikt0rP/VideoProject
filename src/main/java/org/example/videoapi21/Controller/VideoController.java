@@ -1,15 +1,19 @@
 package org.example.videoapi21.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.example.videoapi21.Entity.Video;
+import org.example.videoapi21.Exception.UserNotFoundException;
 import org.example.videoapi21.Repository.VideoRepository;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
+import org.example.videoapi21.Response.ThumbnailUpdateResponse;
 import org.example.videoapi21.Response.VideoCreateResponse;
 import org.example.videoapi21.Service.VideoService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -49,9 +53,8 @@ public class VideoController {
     }
 
     @PatchMapping(value = "/{uuid}/update/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> updateVideoThumbnail(@PathVariable String uuid,
-                                                  @RequestPart("thumbnail") MultipartFile thumbnailFile,
-                                                  HttpServletRequest request) throws Exception {
+    public ResponseEntity<ThumbnailUpdateResponse> updateVideoThumbnail(@PathVariable String uuid, @RequestPart("thumbnail") MultipartFile thumbnailFile, HttpServletRequest request)
+            throws ResourceNotFoundException, AccessDeniedException, UserNotFoundException {
         UUID videoUUID = UUID.fromString(uuid);
         return videoService.handleThumbnailUpdate(thumbnailFile, videoUUID, request);
     }
@@ -78,14 +81,18 @@ public class VideoController {
 
     @GetMapping("/recent")
     public ResponseEntity<Page<Video>> getRecentVideos(Pageable pageable) {
-        Page<Video> videoPage = videoService.getRecentVideos(pageable);
-        return ResponseEntity.ok()
-                .body(videoPage);
+        return videoService.getRecentVideos(pageable);
     }
 
     @GetMapping("/{uuid}/thumbnail")
-    public  ResponseEntity<FileSystemResource> getThumbnail(@PathVariable String uuid){
+    public ResponseEntity<FileSystemResource> getThumbnail(@PathVariable String uuid){
         UUID videoUUID = UUID.fromString(uuid);
         return videoService.getThumbnailFromUUID(videoUUID);
     }
+
+    @GetMapping("/myVideos")
+    public ResponseEntity<Page<Video>> getMyVideos(Pageable pageable, HttpServletRequest request) throws UserNotFoundException{
+        return videoService.getMyVideos(pageable, request);
+    }
+
 }

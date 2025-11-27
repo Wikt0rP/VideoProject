@@ -1,5 +1,6 @@
 package org.example.videoapi21.Repository;
 
+import org.example.videoapi21.Entity.AppUser;
 import org.example.videoapi21.Entity.Video;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,5 +28,6 @@ public interface VideoRepository extends JpaRepository<Video, Long> {
             "AND v.createdAt IS NOT NULL " +
             "ORDER BY v.createdAt DESC")
     Page<Video> findAllWithValidPath(Pageable pageable);
+    Page<Video> findVideosByAuthor(AppUser author, Pageable pageable);
 
 }

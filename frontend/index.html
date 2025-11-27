@@ -26,11 +26,11 @@
 
     <div class="app-container">
         <aside id="sidebar">
-            <a href="#" class="nav-item">
+            <a href="#" class="nav-item" id="nav-home">
                 <div class="nav-icon">&#127968;</div>
                 <div class="nav-text">Home</div>
             </a>
-            <a href="#" class="nav-item">
+            <a href="#" class="nav-item" id="nav-my-videos">
                 <div class="nav-icon">&#128249;</div>
                 <div class="nav-text">Your Videos</div>
             </a>
@@ -111,6 +111,25 @@
 
                 <button class="auth-submit-btn" id="upload-submit-btn">Upload</button>
                 <button class="auth-back-btn" id="upload-cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thumbnail Update Modal -->
+    <div id="thumbnail-modal" class="modal">
+        <div class="modal-content auth-content">
+            <div class="auth-form" style="border-radius: var(--border-radius);">
+                <h2>Update Thumbnail</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Select a new thumbnail for your video.</p>
+
+                <input type="hidden" id="thumbnail-video-uuid">
+
+                <label for="update-thumbnail-file"
+                    style="margin-top: 10px; display: block; color: var(--text-secondary);">Thumbnail Image:</label>
+                <input type="file" id="update-thumbnail-file" accept="image/png, image/jpeg, image/jpg">
+
+                <button class="auth-submit-btn" id="thumbnail-submit-btn">Update</button>
+                <button class="auth-back-btn" id="thumbnail-cancel-btn">Cancel</button>
             </div>
         </div>
     </div>

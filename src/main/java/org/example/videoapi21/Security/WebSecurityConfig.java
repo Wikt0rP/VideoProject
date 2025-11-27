@@ -49,6 +49,8 @@ public class WebSecurityConfig {
                         .requestMatchers(
                                 "/user-dashboard",
                                 "/api/videos/upload",
+                                "/api/videos/{uuid}/update/thumbnail",
+                                "/api/videos/myVideos",
                                 "/api/videos/test")
                         .authenticated()
                         .anyRequest().authenticated())

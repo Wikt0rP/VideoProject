@@ -1,4 +1,5 @@
 import { API_BASE } from './utils.js';
+import { loadMyVideos } from './profile.js';
 
 export async function checkAuth() {
     const userStr = localStorage.getItem('user');
@@ -73,7 +74,9 @@ export function renderAuth(user) {
 
         // Profile button (placeholder for now)
         document.getElementById('profile-btn').addEventListener('click', () => {
-            alert('Profile page - coming soon!');
+            loadMyVideos();
+            // Close menu
+            document.getElementById('user-menu').classList.remove('show');
         });
 
         // Logout button

@@ -40,4 +40,15 @@ public class Video {
         this.uuid = UUID.randomUUID();
         this.createdAt = LocalDateTime.now();
     }
+    public Video(String title, String description, AppUser author){
+        this.title = title;
+        this.description = description;
+        this.author = author;
+
+        this.videoPath = "";
+        this.thumbnailPath = "";
+
+        this.uuid = UUID.randomUUID();
+        this.createdAt = LocalDateTime.now();
+    }
 }

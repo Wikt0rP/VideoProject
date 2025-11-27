@@ -2,9 +2,10 @@ package org.example.videoapi21.Component;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.example.videoapi21.Entity.AppUser;
+import org.example.videoapi21.Exception.UserNotFoundException;
 import org.example.videoapi21.Repository.AppUserRepository;
-import org.example.videoapi21.Response.UserValidationResponse;
 import org.example.videoapi21.Security.JwtUtils;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,27 +27,18 @@ public class UserComponent {
      * "User is not active" + User<br>
      * "OK" + User<br>
      */
-    public UserValidationResponse getUserFromRequest(HttpServletRequest request){
+    public AppUser getUserFromRequest(HttpServletRequest request) throws UserNotFoundException{
         String token = JwtUtils.getJwtFromRequest(request);
-
-        if(token == null || !jwtUtils.validateToken(token)){
-            return new UserValidationResponse("Can not validate user", null);
-        }
-
-        AppUser user = getUserFromToken(token);
-        if(user == null){
-            return new UserValidationResponse("Cannot find user", null);
-        }
-
-        return new UserValidationResponse("OK", user);
+        return getUserFromToken(token);
     }
 
 
-    public AppUser getUserFromToken(String token){
+    public AppUser getUserFromToken(String token) throws UserNotFoundException{
         String username = jwtUtils.extractUsername(token);
         if (username == null || username.isEmpty()) {
             return null;
         }
-        return userRepository.findByUsername(username).orElse(null);
+        return userRepository.findByUsername(username)
+                .orElseThrow(()-> new UsernameNotFoundException("User nof found"));
     }
 }

@@ -3,6 +3,7 @@ package org.example.videoapi21.Exception.ExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.example.videoapi21.Exception.UnableToSetResourcePath;
+import org.example.videoapi21.Exception.UserNotFoundException;
 import org.example.videoapi21.Response.CustomErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -36,5 +37,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public CustomErrorResponse handleAccessDeniedExcepion(AccessDeniedException ex, HttpServletRequest request){
         return new CustomErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(value = UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public CustomErrorResponse handleUserNotFound(UserNotFoundException ex, HttpServletRequest request){
+        return new CustomErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage(), request.getRequestURI());
     }
 }
