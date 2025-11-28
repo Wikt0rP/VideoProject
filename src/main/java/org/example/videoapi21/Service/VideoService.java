@@ -204,13 +204,16 @@ public class VideoService {
             AccessDeniedException, IOException {
         Video video = getVideoFromUUIDIfUserIsAuthor(request, videoUUID);
 
-        Files.deleteIfExists(Paths.get(video.getThumbnailPath()));
-        Path videoDirectory = Paths.get(video.getVideoPath()).getParent();
-        Files.walk(videoDirectory)
-                .sorted(Comparator.reverseOrder())
-                .map(Path::toFile)
-                .forEach(File::delete);
-
+        try {
+            Files.deleteIfExists(Paths.get(video.getThumbnailPath()));
+            Path videoDirectory = Paths.get(video.getVideoPath()).getParent();
+            Files.walk(videoDirectory)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        }catch (IOException ex){
+            //Continue TODO: log?
+        }
         String title = video.getTitle();
         videoRepository.delete(video);
         return  ResponseEntity.ok().body(new DeleteVideoResponse(videoUUID.toString(), title));
