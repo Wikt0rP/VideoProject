@@ -10,9 +10,12 @@ import org.example.videoapi21.Exception.UserNotFoundException;
 import org.example.videoapi21.Kafka.VideoProducer;
 import org.example.videoapi21.Repository.VideoRepository;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
+import org.example.videoapi21.Request.VideoUpdateRequest;
+import org.example.videoapi21.Response.DeleteVideoResponse;
 import org.example.videoapi21.Response.ThumbnailUpdateResponse;
 import org.example.videoapi21.Response.VideoCreateResponse;
-import org.example.videoapi21.Security.UserDetailsImpl;
+import org.example.videoapi21.Response.VideoUpdateDataResponse;
+import org.hibernate.sql.Delete;
 import org.springframework.core.io.FileSystemResource;
 
 import org.springframework.data.domain.Page;
@@ -20,9 +23,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -72,14 +73,16 @@ public class VideoService {
 
     public ResponseEntity<ThumbnailUpdateResponse> handleThumbnailUpdate(MultipartFile fileImg, UUID videoUUID, HttpServletRequest request)
             throws ResourceNotFoundException, AccessDeniedException, UserNotFoundException {
-        AppUser appUser = userComponent.getUserFromRequest(request);
-        Video video = videoRepository.getVideoByUuid(videoUUID)
-                .orElseThrow(() -> new ResourceNotFoundException("Video Not Found"));
+        Video video = getVideoFromUUIDIfUserIsAuthor(request, videoUUID);
 
-        if(!appUser.getId().equals(video.getAuthor().getId())) {
-            throw new AccessDeniedException("Access Denied");
+        video.setThumbnailPath("");
+        try{
+            Files.deleteIfExists(Paths.get(video.getThumbnailPath()));
+        } catch (IOException e) {
+            //Continue TODO: log?
         }
-            handleThumbnailUpload(fileImg, video.getId());
+
+        handleThumbnailUpload(fileImg, video.getId());
         return ResponseEntity.ok(new ThumbnailUpdateResponse(video.getTitle(), videoUUID));
     }
 
@@ -127,7 +130,7 @@ public class VideoService {
     }
 
     public void setVideoPath(Long videoID, String vidoPath) throws UnableToSetResourcePath {
-        Optional<Video> video = videoRepository.getVideoById(videoID);
+        Optional<Video> video = videoRepository.findVideoById(videoID);
         if (video.isPresent()) {
             Video videoEntity = video.get();
             videoEntity.setVideoPath(vidoPath);
@@ -139,7 +142,7 @@ public class VideoService {
 
     public ResponseEntity<FileSystemResource> getVideoFromUUID(UUID uuid)
             throws VideoNotFoundException {
-        Video video = videoRepository.getVideoByUuid(uuid)
+        Video video = videoRepository.findVideoByUuid(uuid)
                 .orElseThrow(() -> new VideoNotFoundException("Video could not be found by uuid"));
 
         FileSystemResource videoResource = new FileSystemResource(video.getVideoPath());
@@ -150,7 +153,7 @@ public class VideoService {
     }
 
     public ResponseEntity<FileSystemResource> getThumbnailFromUUID(UUID uuid){
-        Video video = videoRepository.getVideoByUuid(uuid)
+        Video video = videoRepository.findVideoByUuid(uuid)
                 .orElseThrow(() -> new VideoNotFoundException("Video could not be found by uuid"));
         FileSystemResource thumbnailFile = new FileSystemResource(video.getThumbnailPath());
         if(!thumbnailFile.exists() || !thumbnailFile.isReadable()){
@@ -160,7 +163,7 @@ public class VideoService {
     }
 
     public ResponseEntity<FileSystemResource> getSegmentFile(UUID uuid, String segmentName) {
-        Video video = videoRepository.getVideoByUuid(uuid)
+        Video video = videoRepository.findVideoByUuid(uuid)
                 .orElseThrow(() -> new VideoNotFoundException("Video not found"));
 
         Path playlistPath = Paths.get(video.getVideoPath());
@@ -186,7 +189,44 @@ public class VideoService {
         return ResponseEntity.ok(videoRepository.findVideosByAuthor(appUser, pageable));
     }
 
+    public ResponseEntity<?> updateVideoData(UUID uuid, VideoUpdateRequest videoUpdateRequest, HttpServletRequest request)
+            throws ResourceNotFoundException, AccessDeniedException{
+        Video video = getVideoFromUUIDIfUserIsAuthor(request, uuid);
 
+        videoUpdateRequest.description().ifPresent(video::setDescription);
+        videoUpdateRequest.title().ifPresent(video::setTitle);
+        videoRepository.save(video);
+
+        return ResponseEntity.ok().body(new VideoUpdateDataResponse(uuid.toString(), video.getTitle(), video.getDescription()));
+    }
+
+    public ResponseEntity<DeleteVideoResponse> deleteVideoByUUID(UUID videoUUID, HttpServletRequest request) throws ResourceNotFoundException,
+            AccessDeniedException, IOException {
+        Video video = getVideoFromUUIDIfUserIsAuthor(request, videoUUID);
+
+        Files.deleteIfExists(Paths.get(video.getThumbnailPath()));
+        Path videoDirectory = Paths.get(video.getVideoPath()).getParent();
+        Files.walk(videoDirectory)
+                .sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+
+        String title = video.getTitle();
+        videoRepository.delete(video);
+        return  ResponseEntity.ok().body(new DeleteVideoResponse(videoUUID.toString(), title));
+    }
+
+
+    private Video getVideoFromUUIDIfUserIsAuthor(HttpServletRequest request, UUID videoUpdateRequest) throws ResourceNotFoundException, AccessDeniedException{
+        AppUser appUser = userComponent.getUserFromRequest(request);
+        Video video = videoRepository.findVideoByUuid(videoUpdateRequest)
+                .orElseThrow(() -> new ResourceNotFoundException("Video Not Found"));
+
+        if (!appUser.getId().equals(video.getAuthor().getId())) {
+            throw new AccessDeniedException("Access Denied");
+        }
+        return video;
+    }
 
     private String[] getFfmpegString(File outputDir, File source, String playlistPath) {
         String segmentPattern = outputDir.getAbsolutePath() + File.separator + "segment%d.ts";
@@ -215,16 +255,15 @@ public class VideoService {
     }
 
     private void handleVideoUpload(MultipartFile fileVideo, Long videoId) throws IOException {
-        String filename = UUID.randomUUID() + "_" + fileVideo.getOriginalFilename();
+        String filename = String.valueOf(UUID.randomUUID());
         Path filePath = videoStorage.resolve(filename);
         Files.copy(fileVideo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        System.out.println("File saved: " + filePath.toAbsolutePath());
 
         videoProducer.sendVideoTask(filePath.toAbsolutePath().toString(), videoId);
     }
 
     private void setThumbnailPath(Long videoID, String thumbnailPath) throws UnableToSetResourcePath {
-        Optional<Video> video = videoRepository.getVideoById(videoID);
+        Optional<Video> video = videoRepository.findVideoById(videoID);
         if (video.isPresent()) {
             Video videoEntity = video.get();
             videoEntity.setThumbnailPath(thumbnailPath);

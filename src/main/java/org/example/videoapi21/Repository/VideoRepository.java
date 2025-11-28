@@ -14,9 +14,9 @@ import java.util.UUID;
 
 @Repository
 public interface VideoRepository extends JpaRepository<Video, Long> {
-    Optional<Video> getVideoById(Long id);
+    Optional<Video> findVideoById(Long id);
 
-    Optional<Video> getVideoByUuid(UUID uuid);
+    Optional<Video> findVideoByUuid(UUID uuid);
 
     List<Video> findAll();
 
