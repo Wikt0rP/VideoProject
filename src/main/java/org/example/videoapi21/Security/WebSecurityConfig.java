@@ -51,6 +51,7 @@ public class WebSecurityConfig {
                                 "/api/videos/upload",
                                 "/api/videos/{uuid}/update/thumbnail",
                                 "/api/videos/myVideos",
+                                "/api/videos/delete/{uuid}",
                                 "/api/videos/test")
                         .authenticated()
                         .anyRequest().authenticated())

@@ -6,6 +6,7 @@ import org.example.videoapi21.Entity.Video;
 import org.example.videoapi21.Exception.UserNotFoundException;
 import org.example.videoapi21.Repository.VideoRepository;
 import org.example.videoapi21.Request.CreateVidoeEntityRequest;
+import org.example.videoapi21.Request.VideoUpdateRequest;
 import org.example.videoapi21.Response.ThumbnailUpdateResponse;
 import org.example.videoapi21.Response.VideoCreateResponse;
 import org.example.videoapi21.Service.VideoService;
@@ -52,12 +53,6 @@ public class VideoController {
         return videoService.createVideoWithFilesUpload(videoFile, thumbnailFile, createVidoeEntityRequest, request);
     }
 
-    @PatchMapping(value = "/{uuid}/update/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ThumbnailUpdateResponse> updateVideoThumbnail(@PathVariable String uuid, @RequestPart("thumbnail") MultipartFile thumbnailFile, HttpServletRequest request)
-            throws ResourceNotFoundException, AccessDeniedException, UserNotFoundException {
-        UUID videoUUID = UUID.fromString(uuid);
-        return videoService.handleThumbnailUpdate(thumbnailFile, videoUUID, request);
-    }
 
     @GetMapping("/test")
     public ResponseEntity<?> getAll(HttpServletRequest request) {
@@ -94,5 +89,25 @@ public class VideoController {
     public ResponseEntity<Page<Video>> getMyVideos(Pageable pageable, HttpServletRequest request) throws UserNotFoundException{
         return videoService.getMyVideos(pageable, request);
     }
+
+
+    @PatchMapping(value = "/{uuid}/update/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ThumbnailUpdateResponse> updateVideoThumbnail(@PathVariable String uuid, @RequestPart("thumbnail") MultipartFile thumbnailFile, HttpServletRequest request)
+            throws ResourceNotFoundException, AccessDeniedException, UserNotFoundException, IOException {
+        UUID videoUUID = UUID.fromString(uuid);
+        return videoService.handleThumbnailUpdate(thumbnailFile, videoUUID, request);
+    }
+
+    @PatchMapping("/{uuid}/update")
+    public ResponseEntity<?> updateVideoDetails(@PathVariable String uuid, @RequestBody VideoUpdateRequest videoUpdateRequest, HttpServletRequest request)
+            throws  ResourceNotFoundException, AccessDeniedException{
+        return videoService.updateVideoData(UUID.fromString(uuid), videoUpdateRequest, request);
+    }
+
+    @DeleteMapping("/delete/{uuid}")
+    public ResponseEntity<?> deleteVideo(@PathVariable String uuid, HttpServletRequest request) throws IOException, AccessDeniedException, ResourceNotFoundException {
+        return videoService.deleteVideoByUUID(UUID.fromString(uuid), request);
+    }
+
 
 }

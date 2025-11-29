@@ -115,21 +115,45 @@
         </div>
     </div>
 
-    <!-- Thumbnail Update Modal -->
-    <div id="thumbnail-modal" class="modal">
+    <!-- Edit Video Modal -->
+    <div id="edit-video-modal" class="modal">
         <div class="modal-content auth-content">
             <div class="auth-form" style="border-radius: var(--border-radius);">
-                <h2>Update Thumbnail</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Select a new thumbnail for your video.</p>
+                <h2>Edit Video</h2>
 
-                <input type="hidden" id="thumbnail-video-uuid">
+                <input type="hidden" id="edit-video-uuid">
 
-                <label for="update-thumbnail-file"
-                    style="margin-top: 10px; display: block; color: var(--text-secondary);">Thumbnail Image:</label>
-                <input type="file" id="update-thumbnail-file" accept="image/png, image/jpeg, image/jpg">
+                <label for="edit-video-title"
+                    style="margin-top: 10px; display: block; color: var(--text-secondary);">Title:</label>
+                <input type="text" id="edit-video-title" placeholder="Video Title">
 
-                <button class="auth-submit-btn" id="thumbnail-submit-btn">Update</button>
-                <button class="auth-back-btn" id="thumbnail-cancel-btn">Cancel</button>
+                <label for="edit-video-desc"
+                    style="margin-top: 10px; display: block; color: var(--text-secondary);">Description:</label>
+                <textarea id="edit-video-desc" placeholder="Description" rows="3"
+                    style="resize: none; background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px; border-radius: var(--border-radius-sm); font-size: 1rem; outline: none; font-family: inherit; width: 100%; box-sizing: border-box;"></textarea>
+
+                <label for="edit-video-thumbnail"
+                    style="margin-top: 10px; display: block; color: var(--text-secondary);">New
+                    Thumbnail (optional):</label>
+                <input type="file" id="edit-video-thumbnail" accept="image/png, image/jpeg, image/jpg">
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="auth-submit-btn" id="edit-video-submit-btn" style="flex: 1; margin-top: 0;">Save
+                        Changes</button>
+                    <button class="auth-back-btn" id="edit-video-cancel-btn" style="flex: 1;">Cancel</button>
+                </div>
+
+                <button id="edit-video-delete-btn" style="
+                    margin-top: 15px;
+                    background-color: #ff4444;
+                    color: white;
+                    border: none;
+                    padding: 12px;
+                    border-radius: var(--border-radius-sm);
+                    cursor: pointer;
+                    width: 100%;
+                    font-weight: 600;
+                ">Delete Video</button>
             </div>
         </div>
     </div>

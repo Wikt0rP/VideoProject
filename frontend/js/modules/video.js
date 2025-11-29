@@ -32,7 +32,6 @@ function renderPlaceholders() {
             <div class="thumbnail-container placeholder-animate"></div>
             <div class="info">
                 <div class="title placeholder-text placeholder-animate" style="width: 80%;"></div>
-                <div class="desc placeholder-text placeholder-animate" style="width: 60%;"></div>
             </div>
         `;
         grid.appendChild(card);
@@ -85,7 +84,6 @@ function createVideoCard(video) {
         <div class="info">
             <div class="title">${escapeHtml(video.title || 'Untitled')}</div>
             <div class="author">${escapeHtml(video.author ? video.author.username : 'Unknown Author')}</div>
-            <div class="desc">${escapeHtml(video.description || 'No description')}</div>
         </div>
     `;
 
