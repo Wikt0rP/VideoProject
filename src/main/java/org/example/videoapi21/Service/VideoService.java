@@ -16,6 +16,7 @@ import org.example.videoapi21.Response.ThumbnailUpdateResponse;
 import org.example.videoapi21.Response.VideoCreateResponse;
 import org.example.videoapi21.Response.VideoUpdateDataResponse;
 import org.hibernate.sql.Delete;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 
 import org.springframework.data.domain.Page;
@@ -43,7 +44,9 @@ import java.util.UUID;
 public class VideoService {
     private static final String VIDEO_DIR = "video";
     private static final String thumbnailPath = "thumbnails/";
-    private final String ffmpegPath = "C:\\ffmpeg-2025-11-06-git-222127418b-full_build\\bin\\ffmpeg.exe";
+
+    @Value("${ffmpeg.path}")
+    private String ffmpegPath ;
 
     private final Path videoStorage = Paths.get(VIDEO_DIR);
     private final VideoProducer videoProducer;
@@ -64,7 +67,7 @@ public class VideoService {
         Video video = new Video(createVidoeEntityRequest.title(), createVidoeEntityRequest.description(), appUser);
         videoRepository.save(video);
 
-        handleVideoUpload(fileVideo, video.getId());
+        handleVideoUpload(fileVideo, video);
         handleThumbnailUpload(fileThumbnail, video.getId());
 
         return ResponseEntity.ok(
@@ -257,12 +260,12 @@ public class VideoService {
         };
     }
 
-    private void handleVideoUpload(MultipartFile fileVideo, Long videoId) throws IOException {
-        String filename = String.valueOf(UUID.randomUUID());
+    private void handleVideoUpload(MultipartFile fileVideo, Video video) throws IOException {
+        String filename = video.getUuid() + ".mp4";
         Path filePath = videoStorage.resolve(filename);
         Files.copy(fileVideo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        videoProducer.sendVideoTask(filePath.toAbsolutePath().toString(), videoId);
+        videoProducer.sendVideoTask(filePath.toAbsolutePath().toString(), video.getId());
     }
 
     private void setThumbnailPath(Long videoID, String thumbnailPath) throws UnableToSetResourcePath {

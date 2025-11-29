@@ -26,7 +26,15 @@ public class VideoConsumer {
             concurrency = "4"
     )
     public void consume(String message) {
-        executor.submit(() -> processMessage(message));
+//        executor.submit(() -> processMessage(message));
+        executor.submit(() -> {
+            try {
+                processMessage(message);
+            } catch (Exception e) {
+                System.err.println("Błąd przetwarzania wideo: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
     }
 
     private void processMessage(String message) throws UnableToSetResourcePath {
