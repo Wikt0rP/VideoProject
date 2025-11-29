@@ -39,7 +39,6 @@ public class AuthUserService {
     private final JwtUtils jwtUtils;
     private final RoleRepository roleRepository;
 
-    private final Logger logger = LoggerFactory.getLogger(AuthUserService.class);
 
     public AuthUserService(AppUserRepository userRepository, PasswordValidator passwordValidator, PasswordEncoderConfig passwordEncoder, AuthenticationManager authenticationManager,
                            JwtUtils jwtUtils, RoleRepository roleRepository, UserComponent userComponent) {
